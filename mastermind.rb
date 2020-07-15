@@ -35,10 +35,9 @@ module Playable
   end
 
   def delete_matches(to_delete, array) #delete the matches from the guesses array, then key array
-    (0..3).each do |i|
-      if to_delete.include?(i)
-        array.delete_at(i)
-      end
+    to_delete = to_delete.reverse
+    to_delete.each do |num|
+      array.delete_at(num)
     end
     array
   end
@@ -60,16 +59,8 @@ module Playable
   def give_feedback
     puts "Direct matches: #{@@direct_matches.length}"
     puts "Color matches: #{@@color_matches.length}"
-    puts "Guess again."
+    puts; puts
   end
-
-  def reset_for_new_round(guess, d_matches, c_matches)
-    d_matches = []
-    c_matches = []
-    guess = []
-  end
-
-
 end
 
 class PlayMastermind
@@ -97,20 +88,28 @@ class PlayMastermind
   end
 
   def check_for_matches(guess, key)
-    guess_copy = guess; key_copy = key
-    check_for_direct_matches(guess_copy, key_copy)
-    delete_matches(@@direct_matches, guess_copy)
-    delete_matches(@@direct_matches, key_copy)
-    check_for_color_matches(guess_copy, key_copy)
+    check_for_direct_matches(guess, key)
+    delete_matches(@@direct_matches, guess)
+    delete_matches(@@direct_matches, key)
+    binding.pry
+    check_for_color_matches(guess, key)
+  end
+
+  def reset_for_new_round
+    @player_guess = []
+    @@direct_matches = []
+    @@color_matches = []
+    puts "Guess again."
   end
 
   def play_game
     12.times do
       get_player_guess
       puts "You guessed: #{@player_guess}"
-      check_for_matches(@player_guess, mastermind_key)
+      guess_copy = @player_guess.dup; key_copy = mastermind_key.dup
+      check_for_matches(guess_copy, key_copy)
       give_feedback
-      reset_for_new_round(@player_guess, @direct_matches, @color_matches)
+      reset_for_new_round
     end
   end
 
@@ -122,10 +121,10 @@ class PlayMastermind
       @colors = @colors.shuffle
       @mastermind_key.push(@colors.first)
     end
+  end
 
-    def mastermind_key
-      @mastermind_key
-    end
+  def mastermind_key
+    @mastermind_key
   end
 end
 
