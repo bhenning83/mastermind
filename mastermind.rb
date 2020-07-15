@@ -34,7 +34,7 @@ module Playable
     end
   end
 
-  def delete_matches(to_delete, array)
+  def delete_matches(to_delete, array) #delete the matches from the guesses array, then key array
     (0..3).each do |i|
       if to_delete.include?(i)
         array.delete_at(i)
@@ -46,9 +46,10 @@ module Playable
   def check_for_color_matches(guess, key)
     i = 0
     while i < guess.length
-      if key.includes?(guess[i])
+      if key.include?(guess[i])
         @@color_matches.push(i)
       end
+      i += 1
     end
   end
 
@@ -62,28 +63,13 @@ module Playable
     puts "Guess again."
   end
 
-  def direct_matches
-    @@direct_matches
+  def reset_for_new_round(guess, d_matches, c_matches)
+    d_matches = []
+    c_matches = []
+    guess = []
   end
 
-end
 
-class Computer
-
-  attr_reader :mastermind_key
-
-  def initialize
-    @colors = %w(white black blue red green yellow)
-    @mastermind_key = []
-    key_creator
-  end
-
-  def key_creator
-    4.times do
-      @colors = @colors.shuffle
-      @mastermind_key.push(@colors.first)
-    end
-  end
 end
 
 class PlayMastermind
@@ -94,17 +80,53 @@ class PlayMastermind
   def initialize
     @name = gets.chomp
     @player_guess = []
+    @colors = %w(white black blue red green yellow)
+    secret_key_creator
   end
   
   def get_player_guess
     puts "Try to guess the Mastermind's code. (Enter four colors.)"
     4.times do
-      @player_guess.push(gets.chomp)
+      color = gets.chomp.downcase.strip
+      until @colors.include?(color)
+        puts "Choose from white, black, blue, red, green, or yellow."
+        color = gets.chomp.downcase.strip
+      end
+      @player_guess.push(color)
     end
   end
 
-  def play_game
+  def check_for_matches(guess, key)
+    guess_copy = guess; key_copy = key
+    check_for_direct_matches(guess_copy, key_copy)
+    delete_matches(@@direct_matches, guess_copy)
+    delete_matches(@@direct_matches, key_copy)
+    check_for_color_matches(guess_copy, key_copy)
+  end
 
+  def play_game
+    12.times do
+      get_player_guess
+      puts "You guessed: #{@player_guess}"
+      check_for_matches(@player_guess, mastermind_key)
+      give_feedback
+      reset_for_new_round(@player_guess, @direct_matches, @color_matches)
+    end
+  end
+
+  private
+  
+  def secret_key_creator
+    @mastermind_key = []
+    4.times do
+      @colors = @colors.shuffle
+      @mastermind_key.push(@colors.first)
+    end
+
+    def mastermind_key
+      @mastermind_key
+    end
+  end
 end
 
 puts "Wbat's your name?"
