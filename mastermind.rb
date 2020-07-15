@@ -1,26 +1,42 @@
 # Let computer make a list of four randomized colors
 #   -create array of six possible colors
 #   -shuffle the array and select first one
-#   -push into new CONSTANT called mastermind_key
+#   -push into new CONSTANT called computer_key
 #   -repeat 4 times
 # Ask player to guess four colors
 #   -store in array called player_guess
-# create a copy of the the mastermind_key and the player_guess 
-# loop through each index of player_guess_copy to see if it's a match to the same index of the mastermind_key_copy 
+# create a copy of the the computer_key and the player_guess 
+# loop through each index of player_guess_copy to see if it's a match to the same index of the computer_key_copy 
 #   -if there is an exact match, push the index of the match into a new array called direct_matches
-#   -then delete the matches from both the player_guess_copy and teh mastermind_key_copy
-# loop through the remaining colors in the player_guess_copy to see if they're included in the mastermind_key_copy
-#   -if a color is included, store its index from the mastermind_key_copy in a new array called color_matches
-#   -then delete that color from the mastermind_key_copy
+#   -then delete the matches from both the player_guess_copy and teh computer_key_copy
+# loop through the remaining colors in the player_guess_copy to see if they're included in the computer_key_copy
+#   -if a color is included, store its index from the computer_key_copy in a new array called color_matches
+#   -then delete that color from the computer_key_copy
 #   -continue the loop
-# Reset the mastermind_key_copy to the mastermind_key
+# Reset the computer_key_copy to the computer_key
 # Create a new hash called turn_history that stores the player_guess as a key and the direct_matches and color_matches as a value
 # play game up to 12 times
 #   -if a player turn results in 4 direct matches, end game and declare player the winner
 #   -if 4 direct matches are found before 12 turns are up, declare the computer the winner
 require "pry"
 
-module Playable
+module Switchable
+  @@play_as_mastermind = false
+  
+  def pick_side
+    answer = gets.chomp.downcase.strip
+    until answer == 'mastermind' || answer == 'code breaker'
+      answer = gets.chomp.downcase.strip
+    end
+    if answer == 'mastermind'
+      @@play_as_mastermind = turn_counter
+    end
+  end
+end
+
+
+class GameMethods
+  include Switchable
   @@direct_matches = []
   @@color_matches = []
 
@@ -28,14 +44,14 @@ module Playable
     i = 0
     while i < 4
       if guess[i] == key[i]
-        @@direct_matches.push(i)
+        @@direct_matches.push(i) #won't need teh acutal index after this point, just the length @@direct_matches
       end
       i += 1
     end
   end
 
-  def delete_matches(to_delete, array) #delete the matches from the guesses array, then key array
-    to_delete = to_delete.reverse
+  def delete_matches(to_delete, array)
+    to_delete = to_delete.reverse #so indexes don't shift down as items are being deleted
     to_delete.each do |num|
       array.delete_at(num)
     end
@@ -56,7 +72,7 @@ module Playable
 
   def check_for_winner
     if @@direct_matches.length == 4 
-      puts "Well done, #{name} You cracked the Mastermind's code in #{@turn_counter} turns"
+      puts "Well done, #{name}! You cracked the Mastermind's code in #{@turn_counter} turns."
       exit
     end
   end
@@ -66,28 +82,36 @@ module Playable
     puts "Color matches: #{@@color_matches.length}"
     puts; puts
   end
+
+  def reset_for_new_round
+    @player_guess = []
+    @@direct_matches = []
+    @@color_matches = []
+    puts "You have #{12 - @turn_counter} turns left."
+  end
 end
 
-class PlayMastermind
-  include Playable
+class PlayMastermind < GameMethods
 
-  attr_accessor :name
+  attr_accessor :name, :computer_key
 
   def initialize
     @name = gets.chomp
     @player_guess = []
     @colors = %w(white black blue red green yellow)
-    secret_key_creator
+    comp_key_creator
     @turn_counter = 0
   end
   
   def get_player_guess
-    if @turn_counter == 1
-      puts
-      puts "BEGIN"
-      puts "Try to guess the Mastermind's four-color code. (Color choices: white, black, blue, red, green, or yellow.)"
-    else
-      puts "Guess again. (Color choices: white, black, blue, red, green, or yellow.)"
+    if @@play_as_mastermind == false
+      if @turn_counter == 1
+        puts
+        puts "BEGIN"
+        puts "Try to guess the Mastermind's four-color code. (Color choices: white, black, blue, red, green, or yellow.)"
+      else
+        puts "Guess again. (Color choices: white, black, blue, red, green, or yellow.)"
+      end
     end
     convert_player_guess
     check_guess_length
@@ -121,54 +145,50 @@ class PlayMastermind
     check_for_color_matches(guess, key)
   end
 
-  def reset_for_new_round
-    @player_guess = []
-    @@direct_matches = []
-    @@color_matches = []
-    puts "You have #{12 - @turn_counter} turns left."
-  end
-
-  def ready
-    until gets.chomp.downcase.strip.gsub(/'/, "") == "ready"
-      puts "Type 'ready' to begin."
-    end
-  end
-
+  
   def play_game
     12.times do
       @turn_counter += 1
       get_player_guess
       puts
       puts "You guessed: #{@player_guess.join(" ")}"
-      guess_copy = @player_guess.dup; key_copy = mastermind_key.dup
+      guess_copy = @player_guess.dup; key_copy = computer_key.dup
       check_for_matches(guess_copy, key_copy)
       check_for_winner
       give_feedback
       reset_for_new_round
     end
     puts "You failed to crack the Mastermind's code. You are a loser, #{name}."
-    puts "The code was #{mastermind_key.join(" | ")}"
+    puts "The code was #{computer_key.join(" ")}"
   end
-
-  private
   
-  def secret_key_creator
-    @mastermind_key = []
-    4.times do
-      @colors = @colors.shuffle
-      @mastermind_key.push(@colors.first)
+  def ready
+    until gets.chomp.downcase.strip.gsub(/'/, "") == "ready"
+      puts "Type 'ready' to begin."
     end
   end
 
-  def mastermind_key
-    @mastermind_key
+  def comp_key_creator
+    @computer_key = []
+    4.times do
+      @colors = @colors.shuffle
+      @computer_key.push(@colors.first)
+    end
   end
 end
+
+class BeMastermind < PlayMastermind
+  attr_accessor :player_key
+  
+  def initialize
+    @player_key = get_player_guess
+
 
 puts "What's your name?"
 game = PlayMastermind.new
 puts
 puts "Welcome, #{game.name}."
+puts
 puts "The Mastermind has created a secret code and it's your job crack it. You have 12 guesses."
 puts
 puts "The code is comprised of four colors. Colors may or may not be repeated."\
