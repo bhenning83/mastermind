@@ -45,8 +45,12 @@ module Playable
   def check_for_color_matches(guess, key)
     i = 0
     while i < guess.length
-      if key.include?(guess[i])
+      match = key.index(guess[i])
+      binding.pry
+      if match != nil
         @@color_matches.push(i)
+        key.delete_at(match)
+        binding.pry
       end
       i += 1
     end
@@ -73,6 +77,7 @@ class PlayMastermind
     @player_guess = []
     @colors = %w(white black blue red green yellow)
     secret_key_creator
+    @turn_counter = 0
   end
   
   def get_player_guess
@@ -91,7 +96,6 @@ class PlayMastermind
     check_for_direct_matches(guess, key)
     delete_matches(@@direct_matches, guess)
     delete_matches(@@direct_matches, key)
-    binding.pry
     check_for_color_matches(guess, key)
   end
 
@@ -99,7 +103,7 @@ class PlayMastermind
     @player_guess = []
     @@direct_matches = []
     @@color_matches = []
-    puts "Guess again."
+    puts "You have #{12 - @turn_counter} turns left. Guess again."
   end
 
   def play_game
@@ -108,9 +112,16 @@ class PlayMastermind
       puts "You guessed: #{@player_guess}"
       guess_copy = @player_guess.dup; key_copy = mastermind_key.dup
       check_for_matches(guess_copy, key_copy)
+      if check_for_winner == true
+        puts "You cracked the Mastermind's code in #{@turn_counter} turns"
+        break
+      end
       give_feedback
+      @turn_counter += 1
       reset_for_new_round
     end
+    puts "You failed to crack the Mastermind's code. You are a loser."
+    puts "The code was #{mastermind_key.to_s}"
   end
 
   private
@@ -128,7 +139,7 @@ class PlayMastermind
   end
 end
 
-puts "Wbat's your name?"
+puts "What's your name?"
 game = PlayMastermind.new
 puts
 puts "Welcome, #{game.name}."
