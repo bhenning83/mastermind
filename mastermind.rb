@@ -82,7 +82,16 @@ class PlayMastermind
   end
   
   def get_player_guess
-    puts "Try to guess the Mastermind's four-color code. (Color choices: white, black, blue, red, green, or yellow.)"
+    if @turn_counter == 1
+      puts "Try to guess the Mastermind's four-color code. (Color choices: white, black, blue, red, green, or yellow.)"
+    else
+      puts "Guess again. (Color choices: white, black, blue, red, green, or yellow.)"
+    end
+    convert_player_guess
+    check_guess_length
+  end
+
+  def convert_player_guess
     colors = gets.chomp.downcase.strip.gsub(/,/, "").split
     colors.each do |color|
       until @colors.include?(color)
@@ -90,6 +99,16 @@ class PlayMastermind
         color = gets.chomp.downcase.strip
       end
       @player_guess.push(color)
+    end
+  end
+
+  def check_guess_length
+    if @player_guess.length != 4
+      @player_guess = []
+      puts
+      puts "Error: Code should be four colors."
+      puts
+      get_player_guess
     end
   end
 
@@ -104,7 +123,7 @@ class PlayMastermind
     @player_guess = []
     @@direct_matches = []
     @@color_matches = []
-    puts "You have #{12 - @turn_counter} turns left. Guess again."
+    puts "You have #{12 - @turn_counter} turns left."
   end
 
   def play_game
