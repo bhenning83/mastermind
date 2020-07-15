@@ -56,7 +56,7 @@ module Playable
 
   def check_for_winner
     if @@direct_matches.length == 4 
-      puts "You cracked the Mastermind's code in #{@turn_counter} turns"
+      puts "Well done, #{name} You cracked the Mastermind's code in #{@turn_counter} turns"
       exit
     end
   end
@@ -83,6 +83,8 @@ class PlayMastermind
   
   def get_player_guess
     if @turn_counter == 1
+      puts
+      puts "BEGIN"
       puts "Try to guess the Mastermind's four-color code. (Color choices: white, black, blue, red, green, or yellow.)"
     else
       puts "Guess again. (Color choices: white, black, blue, red, green, or yellow.)"
@@ -126,6 +128,12 @@ class PlayMastermind
     puts "You have #{12 - @turn_counter} turns left."
   end
 
+  def ready
+    until gets.chomp.downcase.strip.gsub(/'/, "") == "ready"
+      puts "Type 'ready' to begin."
+    end
+  end
+
   def play_game
     12.times do
       @turn_counter += 1
@@ -138,7 +146,7 @@ class PlayMastermind
       give_feedback
       reset_for_new_round
     end
-    puts "You failed to crack the Mastermind's code. You are a loser."
+    puts "You failed to crack the Mastermind's code. You are a loser, #{name}."
     puts "The code was #{mastermind_key.join(" | ")}"
   end
 
@@ -161,6 +169,17 @@ puts "What's your name?"
 game = PlayMastermind.new
 puts
 puts "Welcome, #{game.name}."
+puts "The Mastermind has created a secret code and it's your job crack it. You have 12 guesses."
+puts
+puts "The code is comprised of four colors. Colors may or may not be repeated."\
+ "The color choices are white, black, blue, red, green, or yellow."
+ puts
+puts "If you can't guess the four colors in their exact order within 12 attempts, you lose and the Mastermind wins."
+puts
+puts "After each guess, the Mastermind will tell you if you had any direct matches"\
+ "(correct color, correct location), or color matches (correct color, wrong location)"
+puts "Type 'ready' to begin."
+game.ready
 game.play_game
 
 
