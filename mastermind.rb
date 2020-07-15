@@ -46,18 +46,19 @@ module Playable
     i = 0
     while i < guess.length
       match = key.index(guess[i])
-      binding.pry
       if match != nil
         @@color_matches.push(i)
         key.delete_at(match)
-        binding.pry
       end
       i += 1
     end
   end
 
   def check_for_winner
-    @@direct_matches == 4 
+    if @@direct_matches.length == 4 
+      puts "You cracked the Mastermind's code in #{@turn_counter} turns"
+      exit
+    end
   end
 
   def give_feedback
@@ -108,20 +109,18 @@ class PlayMastermind
 
   def play_game
     12.times do
+      @turn_counter += 1
       get_player_guess
-      puts "You guessed: #{@player_guess}"
+      puts
+      puts "You guessed: #{@player_guess.join(" ")}"
       guess_copy = @player_guess.dup; key_copy = mastermind_key.dup
       check_for_matches(guess_copy, key_copy)
-      if check_for_winner == true
-        puts "You cracked the Mastermind's code in #{@turn_counter} turns"
-        break
-      end
+      check_for_winner
       give_feedback
-      @turn_counter += 1
       reset_for_new_round
     end
     puts "You failed to crack the Mastermind's code. You are a loser."
-    puts "The code was #{mastermind_key.to_s}"
+    puts "The code was #{mastermind_key.join(" | ")}"
   end
 
   private
