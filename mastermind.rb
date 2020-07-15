@@ -82,11 +82,11 @@ class PlayMastermind
   end
   
   def get_player_guess
-    puts "Try to guess the Mastermind's code. (Enter four colors.)"
-    4.times do
-      color = gets.chomp.downcase.strip
+    puts "Try to guess the Mastermind's four-color code. (Color choices: white, black, blue, red, green, or yellow.)"
+    colors = gets.chomp.downcase.strip.gsub(/,/, "").split
+    colors.each do |color|
       until @colors.include?(color)
-        puts "Choose from white, black, blue, red, green, or yellow."
+        puts "#{color} is not a valid color. Choose from white, black, blue, red, green, or yellow."
         color = gets.chomp.downcase.strip
       end
       @player_guess.push(color)
