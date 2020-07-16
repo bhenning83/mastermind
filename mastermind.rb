@@ -74,12 +74,7 @@ module GameMethods
     @@player_guess = []
     @@direct_matches = []
     @@color_matches = []
-    if @@be_the_mastermind == true
-      computer_key = []
-      puts "The computer has #{12 - @@turn_counter} turns left."
-    else
-      puts "You have #{12 - @@turn_counter} turns left."
-    end
+    puts "You have #{12 - @@turn_counter} turns left."
   end
 
   def check_for_matches(guess, key)
@@ -128,12 +123,12 @@ module GameMethods
     end
   end
 
-  def comp_key_creator
-    @computer_key = []
+  def comp_key_creator(array)
     4.times do
       @@colors = @@colors.shuffle
-      @computer_key.push(@@colors.first)
+      array.push(@@colors.first)
     end
+    array
   end
 end
 
@@ -143,11 +138,12 @@ class PlayAsCodeBreaker
 
   def initialize
     @name = gets.chomp
-    @computer_key = comp_key_creator
+    @computer_key = []
   end
-
+  
   def play_game
-    comp_key_creator
+    @computer_key = comp_key_creator(@computer_key)
+    binding.pry
     12.times do
       @@turn_counter += 1
       get_player_code
@@ -155,10 +151,12 @@ class PlayAsCodeBreaker
       puts "You guessed: #{@@player_guess.join(" ")}"
       guess_copy = @@player_guess.dup; key_copy = computer_key.dup
       check_for_matches(guess_copy, key_copy)
-      check_for_winner
+      check_for_winner("Well done, #{name}! You cracked the Mastermind's code in #{@@turn_counter} tries.")
       give_feedback
       reset_for_new_round
     end
+    puts "You failed to crack the Mastermind's code. You are a loser, #{name}."
+    puts "The code was #{computer_key.join(" ")}"
   end
 end
 
@@ -178,7 +176,7 @@ class PlayAsMastermind
       puts "The computer guessed: #{computer_key.join(" ")}"
       guess_copy = computer_key.dup; key_copy = player_key.dup
       check_for_matches(guess_copy, key_copy)
-      check_for_winner
+      check_for_winner("Well done, #{name}! You cracked the Mastermind's code in #{@@turn_counter} tries.")
       give_feedback
       reset_for_new_round
     end
@@ -213,22 +211,23 @@ side.side_picker
 puts "Whats your name?"
 if side.be_the_mastermind == false
   game = PlayAsCodeBreaker.new 
+  puts
+  puts "Welcome, #{game.name}."
+  puts
+  puts "The Mastermind has created a secret code and it's your job crack it. You have 12 guesses."
+  puts
+  puts "The code is comprised of four colors. Colors may or may not be repeated."\
+  "The color choices are white, black, blue, red, green, or yellow."
+  puts
+  puts "If you can't guess the four colors in their exact order within 12 attempts, you lose and the Mastermind wins."
+  puts
+  puts "After each guess, the Mastermind will tell you if you had any direct matches"\
+  "(correct color, correct location), or color matches (correct color, wrong location)."\
+  "Direct matches do are not also tallied as color matches"
 else
   game = PlayAsMastermind.new
 end
 puts
-puts "Welcome, #{game.name}."
-puts
-# puts "The Mastermind has created a secret code and it's your job crack it. You have 12 guesses."
-# puts
-# puts "The code is comprised of four colors. Colors may or may not be repeated."\
-# "The color choices are white, black, blue, red, green, or yellow."
-# puts
-# puts "If you can't guess the four colors in their exact order within 12 attempts, you lose and the Mastermind wins."
-# puts
-# puts "After each guess, the Mastermind will tell you if you had any direct matches"\
-# "(correct color, correct location), or color matches (correct color, wrong location)."\
-# "Direct matches do are not also tallied as color matches"
 puts "Type 'ready' to begin."
 game.ready
 game.play_game
