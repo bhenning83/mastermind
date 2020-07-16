@@ -23,7 +23,7 @@ require "pry"
 module GameMethods
   @@direct_matches = []
   @@color_matches = []
-  @@player_guess = []
+  @@player_key = []
   @@colors = %w(white black blue red green yellow)
   @@turn_counter = 0
 
@@ -31,7 +31,7 @@ module GameMethods
     i = 0
     while i < 4
       if guess[i] == key[i]
-        @@direct_matches.push(i) #won't need teh acutal index after this point, just the length @@direct_matches
+        @@direct_matches.push(i) 
       end
       i += 1
     end
@@ -50,7 +50,7 @@ module GameMethods
     while i < guess.length
       match = key.index(guess[i])
       if match != nil
-        @@color_matches.push(i)
+        @@color_matches.push(i) #won't need the acutal index after this point, just the length @@direct_matches
         key.delete_at(match)
       end
       i += 1
@@ -70,11 +70,21 @@ module GameMethods
     puts; puts
   end
 
-  def reset_for_new_round
-    @@player_guess = []
+  def reset_for_new_round(role)
+    if role == "code breaker"
+      @@player_key = []
+      puts "You have #{12 - @@turn_counter} turns left."
+    else
+      @computer_key = []
+      answer = ''
+      puts "The computer has #{12 - @@turn_counter} turns left."
+      puts "Type 'go' to play the next round"
+      until answer == 'go'
+        answer = gets.chomp.downcase.strip
+      end
+    end
     @@direct_matches = []
     @@color_matches = []
-    puts "You have #{12 - @@turn_counter} turns left."
   end
 
   def check_for_matches(guess, key)
@@ -85,13 +95,6 @@ module GameMethods
   end
 
   def get_player_code
-    if @@turn_counter == 1
-      puts
-      puts "BEGIN"
-      puts "Try to guess the Mastermind's four-color code. (Color choices: white, black, blue, red, green, or yellow.)"
-    else
-      puts "Guess again. (Color choices: white, black, blue, red, green, or yellow.)"
-    end
     convert_player_code
     check_guess_length
   end
@@ -103,13 +106,13 @@ module GameMethods
         puts "#{color} is not a valid color. Choose from white, black, blue, red, green, or yellow."
         color = gets.chomp.downcase.strip
       end
-      @@player_guess.push(color)
+      @@player_key.push(color)
     end
   end
 
   def check_guess_length
-    if @@player_guess.length != 4
-      @@player_guess = []
+    if @@player_key.length != 4
+      @@player_key = []
       puts
       puts "Error: Code should be four colors."
       puts
@@ -140,20 +143,30 @@ class PlayAsCodeBreaker
     @name = gets.chomp
     @computer_key = []
   end
+
+  def get_player_code_code_breaker
+    if @@turn_counter == 1
+      puts
+      puts "BEGIN"
+      puts "Try to guess the Mastermind's four-color code. (Color choices: white, black, blue, red, green, or yellow.)"
+    else
+      puts "Guess again. (Color choices: white, black, blue, red, green, or yellow.)"
+    end
+    get_player_code
+  end
   
   def play_game
     @computer_key = comp_key_creator(@computer_key)
-    binding.pry
     12.times do
       @@turn_counter += 1
-      get_player_code
+      get_player_code_code_breaker
       puts
-      puts "You guessed: #{@@player_guess.join(" ")}"
-      guess_copy = @@player_guess.dup; key_copy = computer_key.dup
+      puts "You guessed: #{@@player_key.join(" ")}"
+      guess_copy = @@player_key.dup; key_copy = computer_key.dup
       check_for_matches(guess_copy, key_copy)
       check_for_winner("Well done, #{name}! You cracked the Mastermind's code in #{@@turn_counter} tries.")
       give_feedback
-      reset_for_new_round
+      reset_for_new_round("code breaker")
     end
     puts "You failed to crack the Mastermind's code. You are a loser, #{name}."
     puts "The code was #{computer_key.join(" ")}"
@@ -162,26 +175,37 @@ end
 
 class PlayAsMastermind
   include GameMethods
-  attr_accessor :player_key
+  attr_accessor :name, :computer_key
 
   def initialize
-    @player_key = get_player_code
+    @name = gets.chomp
+    @computer_key = []
+  end
+  
+  def get_player_code_mastermind
+    puts "Create your secret coce"
+    get_player_code
   end
 
-  def play_game_as_mastermind
+  def computer_intelligence
+    
+  end
+
+
+  def play_game
+    get_player_code_mastermind
     12.times do 
       @@turn_counter += 1
-      comp_key_creator
+      comp_key_creator(@computer_key)
       puts
       puts "The computer guessed: #{computer_key.join(" ")}"
-      guess_copy = computer_key.dup; key_copy = player_key.dup
+      guess_copy = computer_key.dup; key_copy = @@player_key.dup
       check_for_matches(guess_copy, key_copy)
-      check_for_winner("Well done, #{name}! You cracked the Mastermind's code in #{@@turn_counter} tries.")
+      check_for_winner("Oh no! The the computer cracked your code. You are a loser, #{name}.")
       give_feedback
-      reset_for_new_round
+      reset_for_new_round("mastermind")
     end
-    puts "You failed to crack the Mastermind's code. You are a loser, #{name}."
-    puts "The code was #{computer_key.join(" ")}"
+    puts "Well done, #{name}! The computer failed to crack your code."
   end
 end
 
