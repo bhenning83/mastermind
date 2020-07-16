@@ -20,29 +20,12 @@
 #   -if 4 direct matches are found before 12 turns are up, declare the computer the winner
 require "pry"
 
-module Switchable
-  @@play_as_mastermind = false
-  
-  def pick_side
-    answer = gets.chomp.downcase.strip.gsub(/'/, '')
-    until answer == 'mastermind' || answer == 'code breaker'
-      answer = gets.chomp.downcase.strip
-    end
-    if answer == 'mastermind'
-      @@play_as_mastermind = true
-    end
-  end
-
-  def play_as_mastermind
-    @@play_as_mastermind
-  end
-end
-
-
-class GameMethods
-  include Switchable
+module GameMethods
   @@direct_matches = []
   @@color_matches = []
+  @@player_guess = []
+  @@colors = %w(white black blue red green yellow)
+  @@turn_counter = 0
 
   def check_for_direct_matches(guess, key)
     i = 0
@@ -74,9 +57,9 @@ class GameMethods
     end
   end
 
-  def check_for_winner
+  def check_for_winner(message)
     if @@direct_matches.length == 4 
-      puts "Well done, #{name}! You cracked the Mastermind's code in #{@turn_counter} turns."
+      puts message
       exit
     end
   end
@@ -88,69 +71,14 @@ class GameMethods
   end
 
   def reset_for_new_round
-    @player_guess = []
+    @@player_guess = []
     @@direct_matches = []
     @@color_matches = []
-    if @@play_as_mastermind == true
+    if @@be_the_mastermind == true
       computer_key = []
-      puts "The computer has #{12 - @turn_counter} turns left."
+      puts "The computer has #{12 - @@turn_counter} turns left."
     else
-      puts "You have #{12 - @turn_counter} turns left."
-    end
-  end
-end
-
-class PlayMastermind < GameMethods
-
-  attr_accessor :name, :computer_key
-
-  def initialize
-    @name = gets.chomp
-    @player_guess = []
-    @colors = %w(white black blue red green yellow)
-    @turn_counter = 0
-  end
-  
-  def get_player_guess
-    if @@play_as_mastermind == false
-      if @turn_counter == 1
-        puts
-        puts "BEGIN"
-        puts "Try to guess the Mastermind's four-color code. (Color choices: white, black, blue, red, green, or yellow.)"
-      else
-        puts "Guess again. (Color choices: white, black, blue, red, green, or yellow.)"
-      end
-    end
-    convert_player_guess
-    check_guess_length
-  end
-
-  def convert_player_guess
-    colors = gets.chomp.downcase.strip.gsub(/,/, "").split
-    colors.each do |color|
-      until @colors.include?(color)
-        puts "#{color} is not a valid color. Choose from white, black, blue, red, green, or yellow."
-        color = gets.chomp.downcase.strip
-      end
-      @player_guess.push(color)
-    end
-  end
-
-  def check_guess_length
-    if @player_guess.length != 4
-      @player_guess = []
-      puts
-      puts "Error: Code should be four colors."
-      puts
-      get_player_guess
-    end
-  end
-
-  def comp_key_creator
-    @computer_key = []
-    4.times do
-      @colors = @colors.shuffle
-      @computer_key.push(@colors.first)
+      puts "You have #{12 - @@turn_counter} turns left."
     end
   end
 
@@ -160,44 +88,91 @@ class PlayMastermind < GameMethods
     delete_matches(@@direct_matches, key)
     check_for_color_matches(guess, key)
   end
-  
-  def play_game
-    comp_key_creator
-    12.times do
-      @turn_counter += 1
-      get_player_guess
+
+  def get_player_code
+    if @@turn_counter == 1
       puts
-      puts "You guessed: #{@player_guess.join(" ")}"
-      guess_copy = @player_guess.dup; key_copy = computer_key.dup
-      check_for_matches(guess_copy, key_copy)
-      check_for_winner
-      give_feedback
-      reset_for_new_round
+      puts "BEGIN"
+      puts "Try to guess the Mastermind's four-color code. (Color choices: white, black, blue, red, green, or yellow.)"
+    else
+      puts "Guess again. (Color choices: white, black, blue, red, green, or yellow.)"
+    end
+    convert_player_code
+    check_guess_length
+  end
+
+  def convert_player_code
+    colors = gets.chomp.downcase.strip.gsub(/,/, "").split
+    colors.each do |color|
+      until @@colors.include?(color)
+        puts "#{color} is not a valid color. Choose from white, black, blue, red, green, or yellow."
+        color = gets.chomp.downcase.strip
+      end
+      @@player_guess.push(color)
     end
   end
-  
+
+  def check_guess_length
+    if @@player_guess.length != 4
+      @@player_guess = []
+      puts
+      puts "Error: Code should be four colors."
+      puts
+      get_player_code
+    end
+  end
+
   def ready
     until gets.chomp.downcase.strip.gsub(/'/, "") == "ready"
       puts "Type 'ready' to begin."
     end
   end
 
+  def comp_key_creator
+    @computer_key = []
+    4.times do
+      @@colors = @@colors.shuffle
+      @computer_key.push(@@colors.first)
+    end
+  end
 end
 
-class BeMastermind < PlayMastermind #only for playing as Mastermind
+class PlayAsCodeBreaker
+  include GameMethods
+  attr_accessor :name, :computer_key
+
+  def initialize
+    @name = gets.chomp
+    @computer_key = comp_key_creator
+  end
+
+  def play_game
+    comp_key_creator
+    12.times do
+      @@turn_counter += 1
+      get_player_code
+      puts
+      puts "You guessed: #{@@player_guess.join(" ")}"
+      guess_copy = @@player_guess.dup; key_copy = computer_key.dup
+      check_for_matches(guess_copy, key_copy)
+      check_for_winner
+      give_feedback
+      reset_for_new_round
+    end
+  end
+end
+
+class PlayAsMastermind
+  include GameMethods
   attr_accessor :player_key
 
   def initialize
-    @player_guess = []
-    @colors = %w(white black blue red green yellow)
-    @turn_counter = 0
-    @player_key = get_player_guess
-    @@play_as_mastermind == true
+    @player_key = get_player_code
   end
 
   def play_game_as_mastermind
     12.times do 
-      @turn_counter += 1
+      @@turn_counter += 1
       comp_key_creator
       puts
       puts "The computer guessed: #{computer_key.join(" ")}"
@@ -212,34 +187,52 @@ class BeMastermind < PlayMastermind #only for playing as Mastermind
   end
 end
 
+class PickASide
+  attr_accessor :be_the_mastermind
 
-puts "What's your name?"
-game = PlayMastermind.new
+  def initialize
+    @be_the_mastermind = false
+  end
+  
+  def side_picker
+    answer = gets.chomp.downcase.strip.gsub(/'/, '')
+    until answer == 'mastermind' || answer == 'code breaker'
+      answer = gets.chomp.downcase.strip
+    end
+    if answer == 'mastermind'
+      @be_the_mastermind = true
+    end
+  end
+end
+
+puts "Welcome to Mastermind by bhenning83."
 puts "Type 'Code Breaker' to break the Mastermind's code (default gameplay)."
 puts "Type 'Mastermind' to have the computer try to break your code."
-game.pick_side
-puts
-if game.play_as_mastermind == false
-  puts "Welcome, #{game.name}."
-  puts
-  puts "The Mastermind has created a secret code and it's your job crack it. You have 12 guesses."
-  puts
-  puts "The code is comprised of four colors. Colors may or may not be repeated."\
-  "The color choices are white, black, blue, red, green, or yellow."
-  puts
-  puts "If you can't guess the four colors in their exact order within 12 attempts, you lose and the Mastermind wins."
-  puts
-  puts "After each guess, the Mastermind will tell you if you had any direct matches"\
-  "(correct color, correct location), or color matches (correct color, wrong location)"
-  puts "Type 'ready' to begin."
-  game.ready
-  game.play_game
+side = PickASide.new
+side.side_picker
+puts "Whats your name?"
+if side.be_the_mastermind == false
+  game = PlayAsCodeBreaker.new 
 else
-  othergame = BeMastermind.new
-  puts "Type 'ready' to begin."
-  othergame.ready
-  BeMastermind.play_game_as_mastermind
+  game = PlayAsMastermind.new
 end
+puts
+puts "Welcome, #{game.name}."
+puts
+# puts "The Mastermind has created a secret code and it's your job crack it. You have 12 guesses."
+# puts
+# puts "The code is comprised of four colors. Colors may or may not be repeated."\
+# "The color choices are white, black, blue, red, green, or yellow."
+# puts
+# puts "If you can't guess the four colors in their exact order within 12 attempts, you lose and the Mastermind wins."
+# puts
+# puts "After each guess, the Mastermind will tell you if you had any direct matches"\
+# "(correct color, correct location), or color matches (correct color, wrong location)."\
+# "Direct matches do are not also tallied as color matches"
+puts "Type 'ready' to begin."
+game.ready
+game.play_game
+
 
 
 
