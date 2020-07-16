@@ -1,3 +1,5 @@
+require "pry"
+
 #All methods to be used by both PlayAsMastermind and PlayAsCodeBreaker classes
 module GameMethods
   @@direct_matches = []
@@ -156,12 +158,12 @@ end
 #only initializes if player choses to play as Mastermind
 class PlayAsMastermind
   include GameMethods
-  attr_accessor :name, :computer_key
+  attr_accessor :name, :computer_key, :keep_matches
 
   def initialize
     @name = gets.chomp
     @computer_key = []
-    @keep_matches = []
+    @keep_matches = {}
   end
 
   def get_player_code_mastermind
@@ -169,17 +171,33 @@ class PlayAsMastermind
     get_player_code
   end
 
+  #saves direct matches from previous round to be used in next round
+  def save_direct_matches
+    @@direct_matches.each do |i|
+      keep_matches[i] = @@player_key[i]
+    end
+  end
+
+  def artificial_intelligence
+    keep_matches.each do |key, value|
+      computer_key[key] = value
+    end
+  end
+
   def play_game
     get_player_code_mastermind
     12.times do
       @@turn_counter += 1
       comp_key_creator(@computer_key)
+      artificial_intelligence
+      binding.pry
       puts
       puts "The computer guessed: #{computer_key.join(' ')}"
       guess_copy = computer_key.dup; key_copy = @@player_key.dup
       check_for_matches(guess_copy, key_copy)
       check_for_winner("Oh no! The the computer cracked your code. You are a loser, #{name}.")
       give_feedback
+      save_direct_matches
       reset_for_new_round('mastermind')
     end
     puts
