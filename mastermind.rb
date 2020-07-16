@@ -24,13 +24,17 @@ module Switchable
   @@play_as_mastermind = false
   
   def pick_side
-    answer = gets.chomp.downcase.strip
+    answer = gets.chomp.downcase.strip.gsub(/'/, '')
     until answer == 'mastermind' || answer == 'code breaker'
       answer = gets.chomp.downcase.strip
     end
     if answer == 'mastermind'
-      @@play_as_mastermind = turn_counter
+      @@play_as_mastermind = true
     end
+  end
+
+  def play_as_mastermind
+    @@play_as_mastermind
   end
 end
 
@@ -87,7 +91,12 @@ class GameMethods
     @player_guess = []
     @@direct_matches = []
     @@color_matches = []
-    puts "You have #{12 - @turn_counter} turns left."
+    if @@play_as_mastermind == true
+      computer_key = []
+      puts "The computer has #{12 - @turn_counter} turns left."
+    else
+      puts "You have #{12 - @turn_counter} turns left."
+    end
   end
 end
 
@@ -99,7 +108,6 @@ class PlayMastermind < GameMethods
     @name = gets.chomp
     @player_guess = []
     @colors = %w(white black blue red green yellow)
-    comp_key_creator
     @turn_counter = 0
   end
   
@@ -138,15 +146,23 @@ class PlayMastermind < GameMethods
     end
   end
 
+  def comp_key_creator
+    @computer_key = []
+    4.times do
+      @colors = @colors.shuffle
+      @computer_key.push(@colors.first)
+    end
+  end
+
   def check_for_matches(guess, key)
     check_for_direct_matches(guess, key)
     delete_matches(@@direct_matches, guess)
     delete_matches(@@direct_matches, key)
     check_for_color_matches(guess, key)
   end
-
   
   def play_game
+    comp_key_creator
     12.times do
       @turn_counter += 1
       get_player_guess
@@ -158,8 +174,6 @@ class PlayMastermind < GameMethods
       give_feedback
       reset_for_new_round
     end
-    puts "You failed to crack the Mastermind's code. You are a loser, #{name}."
-    puts "The code was #{computer_key.join(" ")}"
   end
   
   def ready
@@ -168,39 +182,64 @@ class PlayMastermind < GameMethods
     end
   end
 
-  def comp_key_creator
-    @computer_key = []
-    4.times do
-      @colors = @colors.shuffle
-      @computer_key.push(@colors.first)
-    end
-  end
 end
 
-class BeMastermind < PlayMastermind
+class BeMastermind < PlayMastermind #only for playing as Mastermind
   attr_accessor :player_key
-  
+
   def initialize
+    @player_guess = []
+    @colors = %w(white black blue red green yellow)
+    @turn_counter = 0
     @player_key = get_player_guess
+    @@play_as_mastermind == true
+  end
+
+  def play_game_as_mastermind
+    12.times do 
+      @turn_counter += 1
+      comp_key_creator
+      puts
+      puts "The computer guessed: #{computer_key.join(" ")}"
+      guess_copy = computer_key.dup; key_copy = player_key.dup
+      check_for_matches(guess_copy, key_copy)
+      check_for_winner
+      give_feedback
+      reset_for_new_round
+    end
+    puts "You failed to crack the Mastermind's code. You are a loser, #{name}."
+    puts "The code was #{computer_key.join(" ")}"
+  end
+end
 
 
 puts "What's your name?"
 game = PlayMastermind.new
+puts "Type 'Code Breaker' to break the Mastermind's code (default gameplay)."
+puts "Type 'Mastermind' to have the computer try to break your code."
+game.pick_side
 puts
-puts "Welcome, #{game.name}."
-puts
-puts "The Mastermind has created a secret code and it's your job crack it. You have 12 guesses."
-puts
-puts "The code is comprised of four colors. Colors may or may not be repeated."\
- "The color choices are white, black, blue, red, green, or yellow."
- puts
-puts "If you can't guess the four colors in their exact order within 12 attempts, you lose and the Mastermind wins."
-puts
-puts "After each guess, the Mastermind will tell you if you had any direct matches"\
- "(correct color, correct location), or color matches (correct color, wrong location)"
-puts "Type 'ready' to begin."
-game.ready
-game.play_game
+if game.play_as_mastermind == false
+  puts "Welcome, #{game.name}."
+  puts
+  puts "The Mastermind has created a secret code and it's your job crack it. You have 12 guesses."
+  puts
+  puts "The code is comprised of four colors. Colors may or may not be repeated."\
+  "The color choices are white, black, blue, red, green, or yellow."
+  puts
+  puts "If you can't guess the four colors in their exact order within 12 attempts, you lose and the Mastermind wins."
+  puts
+  puts "After each guess, the Mastermind will tell you if you had any direct matches"\
+  "(correct color, correct location), or color matches (correct color, wrong location)"
+  puts "Type 'ready' to begin."
+  game.ready
+  game.play_game
+else
+  othergame = BeMastermind.new
+  puts "Type 'ready' to begin."
+  othergame.ready
+  BeMastermind.play_game_as_mastermind
+end
 
 
 
