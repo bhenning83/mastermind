@@ -1,5 +1,3 @@
-require "pry"
-
 #All methods to be used by both PlayAsMastermind and PlayAsCodeBreaker classes
 module GameMethods
   @@direct_matches = []
@@ -7,7 +5,7 @@ module GameMethods
   @@player_key = []
   @@colors = %w[white black blue red green yellow]
   @@turn_counter = 0
-
+  
   def check_for_direct_matches(guess, key)
     i = 0
     while i < 4
@@ -25,12 +23,14 @@ module GameMethods
     array
   end
 
+  #loops through each color in guess, looks for it in key, and then deletes the color from the key to avoid duplicates
   def check_for_color_matches(guess, key)
     i = 0
     while i < guess.length
       match = key.index(guess[i])
       unless match.nil?
-        @@color_matches.push(i) # won't need the acutal index after this point, just the length @@direct_matches
+        @@color_matches.push(guess[i]) 
+        keep_color_matches = @@color_matches.dup
         key.delete_at(match)
       end
       i += 1
@@ -58,6 +58,7 @@ module GameMethods
       puts "You have #{12 - @@turn_counter} turns left."
     else
       @computer_key = []
+      keep_color_matches = []
       answer = ''
       puts "The computer has #{12 - @@turn_counter} turns left."
       puts "Type 'go' to play the next round"
@@ -158,16 +159,17 @@ end
 #only initializes if player choses to play as Mastermind
 class PlayAsMastermind
   include GameMethods
-  attr_accessor :name, :computer_key, :keep_matches
+  attr_accessor :name, :computer_key, :keep_matches, :keep_color_matches
 
   def initialize
     @name = gets.chomp
     @computer_key = []
     @keep_matches = {}
+    @keep_color_matches = []
   end
 
   def get_player_code_mastermind
-    puts 'Create your secret coce'
+    puts 'Create your secret code.'
     get_player_code
   end
 
@@ -178,19 +180,25 @@ class PlayAsMastermind
     end
   end
 
+  #Generates a guess with existing direct matches and color matches
   def artificial_intelligence
+    keep_color_matches.each do |color|
+      if !computer_key.include?(color)
+        computer_key = []
+        comp_key_creator(@computer_key)
+      end
+    end
     keep_matches.each do |key, value|
       computer_key[key] = value
     end
   end
-
+  
   def play_game
     get_player_code_mastermind
     12.times do
       @@turn_counter += 1
       comp_key_creator(@computer_key)
       artificial_intelligence
-      binding.pry
       puts
       puts "The computer guessed: #{computer_key.join(' ')}"
       guess_copy = computer_key.dup; key_copy = @@player_key.dup
@@ -201,7 +209,7 @@ class PlayAsMastermind
       reset_for_new_round('mastermind')
     end
     puts
-    puts "Well done, #{name}! The computer failed to crack your code."
+    puts "Well done, #{name}! The computer failed to crack your code (#{@@player_key})."
   end
 end
 
